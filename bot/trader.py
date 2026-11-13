@@ -61,6 +61,11 @@ class Trader:
     def _load(self):
         if self.state_path.exists():
             s = json.loads(self.state_path.read_text())
+            if s.get("mode", self.cfg.mode) != self.cfg.mode:
+                # смена режима (например, paper -> live): старые сделки и максимум депозита не относятся к новому счёту
+                log.warning("Режим сменился %s -> %s: состояние бота сброшено", s.get("mode"), self.cfg.mode)
+                self.state_path.rename(self.state_path.with_name(f"state_{s.get('mode')}.json"))
+                return
             self.trades = {k: Trade(**v) for k, v in s.get("trades", {}).items()}
             self.day = s.get("day", "")
             self.day_start_equity = s.get("day_start_equity", 0.0)
@@ -71,6 +76,7 @@ class Trader:
     def _save(self):
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
         self.state_path.write_text(json.dumps({
+            "mode": self.cfg.mode,
             "trades": {k: asdict(v) for k, v in self.trades.items()},
             "day": self.day, "day_start_equity": self.day_start_equity,
             "peak_equity": self.peak_equity, "last_candle": self.last_candle,
