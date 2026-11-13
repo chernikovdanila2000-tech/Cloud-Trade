@@ -1,0 +1,7 @@
+services:
+  bot:
+    build: .
+    env_file: .env
+    volumes:
+      - ./data:/app/data      # состояние, сделки и логи переживают перезапуск
+    restart: unless-stopped   # бот поднимется сам после сбоя или перезагрузки сервера
